@@ -6,7 +6,7 @@ This document defines the core concepts, relationships, boundaries, and business
 
 The domain model describes what exists in the system and how those concepts relate to one another. It intentionally avoids implementation-specific decisions such as database tables, indexes, SQL queries, HTTP routes, or framework structure.
 
-The goal is to establish a stable conceptual model that can support the current assessment while leaving room for the system to evolve into a broader property-management platform.
+The goal is to establish a stable conceptual model that can support the current version while leaving room for the system to evolve into a broader property-management platform.
 
 ---
 
@@ -28,9 +28,9 @@ The system also contains several concepts that belong to a listing but do not cu
 
 An Agent is a person or business representative responsible for publishing and managing property listings through the system.
 
-For the scope of this assessment, an Agent has a minimal identity and is primarily associated with the listings they manage.
+For the scope of this version, an Agent has a minimal identity and is primarily associated with the listings they manage.
 
-The assessment does not require authentication, authorization, agent profiles, or agent-specific business workflows.
+V1 does not require authentication, authorization, agent profiles, or agent-specific business workflows.
 
 ### Listing
 
@@ -77,7 +77,7 @@ Physical Property
       └── Rental Listing
 ```
 
-However, introducing this distinction into the current assessment would add complexity that is not required by the specification.
+However, introducing this distinction into the current version would add complexity that is not required by the specification.
 
 Therefore, the current model treats the Listing as the primary domain entity.
 
@@ -137,7 +137,7 @@ It is a constrained domain value rather than arbitrary free-form text.
 
 A listing has a price representing the monetary amount associated with the offering.
 
-The current assessment only requires a numeric price.
+The current version only requires a numeric price.
 
 Currency handling is intentionally kept simple at this stage. If the product later supports multiple currencies or financial workflows, money can become a richer domain concept containing amount and currency.
 
@@ -244,7 +244,7 @@ The persistence and query implementation will be defined in later design stages.
 
 ## 9. Listing Lifecycle
 
-The current assessment does not require a complex listing lifecycle.
+The current version does not require a complex listing lifecycle.
 
 A listing can be:
 
@@ -252,7 +252,7 @@ A listing can be:
 Created → Available through the API → Updated → Deleted
 ```
 
-The assessment does not currently require concepts such as:
+The version does not currently require concepts such as:
 
 * Draft
 * Published
@@ -262,7 +262,7 @@ The assessment does not currently require concepts such as:
 * Rented
 * Expired
 
-These may become meaningful in a production marketplace, but introducing them now would add business rules that are not required by the assessment.
+These may become meaningful in a production marketplace, but introducing them now would add business rules that are not required by the version.
 
 The absence of a lifecycle status is therefore a deliberate scope decision.
 
@@ -381,7 +381,7 @@ The important architectural principle is:
 
 > Design the current system so that these concepts can be introduced later without unnecessarily implementing them today.
 
-The current assessment therefore optimizes for a small, coherent domain rather than attempting to model the entire future platform.
+The current version therefore optimizes for a small, coherent domain rather than attempting to model the entire future platform.
 
 ---
 
@@ -407,4 +407,4 @@ The domain model follows a simple principle:
 
 > **Model what the current requirements require, while avoiding decisions that make future evolution unnecessarily difficult.**
 
-The system should be easy to extend, but the assessment should remain small enough to understand, test, and deliver within its time constraints.
+The system should be easy to extend, but the version should remain small enough to understand, test, and deliver within its time constraints.

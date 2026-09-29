@@ -186,7 +186,7 @@ Both filters may be used independently or together.
 
 The system must allow listings to be filtered by bedroom count.
 
-The initial assessment should define whether the supplied bedroom value represents:
+For now we should define whether the supplied bedroom value represents:
 
 * an exact match, or
 * a minimum number of bedrooms.
@@ -481,7 +481,7 @@ The initial API should:
 * avoid committing secrets
 * follow least-privilege principles where applicable
 
-Authentication and authorization are outside the assessment scope.
+Authentication and authorization are outside the v1 scope.
 
 ---
 
@@ -501,9 +501,9 @@ The architecture should remain understandable to another engineer joining the pr
 
 ## NFR-06 - Observability
 
-The initial assessment should provide basic application logging sufficient to diagnose common failures.
+V1 should provide basic application logging sufficient to diagnose common failures.
 
-Advanced observability such as distributed tracing and centralized log aggregation is outside the assessment scope.
+Advanced observability such as distributed tracing and centralized log aggregation is outside the v1 scope.
 
 ---
 
@@ -514,16 +514,6 @@ The system should use appropriate database indexes for its expected query patter
 Geospatial queries should use an appropriate spatial index.
 
 The initial implementation does not require benchmarking against production-scale traffic, but query behavior should be examined using realistic test data where appropriate.
-
----
-
-# 13. Constraints
-
-## C-01 - Assessment Time
-
-The core assessment implementation is time-boxed to approximately 3–4 hours.
-
-Learning activities may continue after the assessment, but production-scale infrastructure should not be added merely to make the assessment appear more sophisticated.
 
 ---
 
@@ -555,7 +545,7 @@ Microservices are not required.
 
 The project will use SQL directly through a thin database-access layer.
 
-A heavy ORM will not be introduced for the assessment because understanding PostgreSQL and SQL is an explicit learning objective.
+A heavy ORM will be introduced for the v2.
 
 ---
 
@@ -641,7 +631,7 @@ Future requirements may include:
 * advanced geographic search
 * recommendations
 
-These future requirements are recorded only as architectural context. They must not become implicit requirements of the assessment.
+These future requirements are recorded only as architectural context. They must not become implicit requirements of v1.
 
 ---
 

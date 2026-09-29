@@ -8,7 +8,7 @@ Property owners and agents similarly need a reliable way to publish and manage p
 
 The initial system will provide a backend API for creating, managing, and discovering property listings.
 
-For the assessment, the system will focus narrowly on the listing and discovery problem: storing property listings and allowing consumers to search for listings using structured filters and geographic proximity.
+The system will currently focus narrowly on the listing and discovery problem: storing property listings and allowing consumers to search for listings using structured filters and geographic proximity.
 
 The system should provide a clean foundation that can later evolve into a broader property-management platform without prematurely implementing functionality that is outside the current problem.
 
@@ -59,7 +59,7 @@ Build a backend service that provides:
 
 Consumes listing data and searches for properties matching desired criteria.
 
-For the assessment, the property seeker is represented only through API requests. Authentication and user accounts are outside the initial scope.
+The property seeker is represented only through API requests. Authentication and user accounts are outside the initial scope.
 
 ### Agent
 
@@ -70,8 +70,6 @@ An agent must exist as a real entity in the database so that listings can mainta
 ### API Consumer
 
 A web or mobile application will eventually consume the API.
-
-The assessment does not require implementing a frontend or mobile client.
 
 ---
 
@@ -110,7 +108,7 @@ Required concepts include:
 - geographic location
 - associated agent
 
-Additional descriptive information may be included where useful, but the assessment should not expand into a complete property-management domain.
+Additional descriptive information may be included where useful, 
 
 ---
 
@@ -177,7 +175,7 @@ The design should allow the system to evolve without requiring the initial listi
 
 ## 9. Constraints
 
-The assessment has a deliberately small scope and a limited implementation time.
+A deliberate small scope and a limited implementation time.
 
 The initial implementation should therefore favor:
 
@@ -208,8 +206,6 @@ The system will initially be implemented as a **modular monolith**.
 ---
 
 ## 10. Explicitly Out of Scope
-
-The following are not part of the assessment:
 
 - authentication
 - authorization
