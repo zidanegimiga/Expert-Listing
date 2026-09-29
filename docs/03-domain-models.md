@@ -2,41 +2,121 @@
 
 ## 1. Purpose
 
-This document defines the core concepts, relationships, boundaries, and business rules of the Property Listings API.
+This document defines the core concepts, relationships, boundaries, and business rules of the Property Platform.
 
-The domain model describes what exists in the system and how those concepts relate to one another. It intentionally avoids implementation-specific decisions such as database tables, indexes, SQL queries, HTTP routes, or framework structure.
+The domain model describes what exists in the system and how those concepts relate to one another. It intentionally avoids implementation-specific decisions such as database tables, SQL queries, HTTP routes, framework structure, or infrastructure.
 
-The goal is to establish a stable conceptual model that can support the current version while leaving room for the system to evolve into a broader property-management platform.
+The first version focuses on users, roles, agents, listings, and listing discovery while leaving room for the platform to evolve into a broader property-management system.
 
 ---
 
-## 2. Domain Vocabulary
+# 2. Core Domain Concepts
 
-The initial system contains two primary domain entities:
+The initial domain contains four important concepts:
 
-* **Agent**
+* **User**
+* **Role**
+* **Agent Profile**
 * **Listing**
 
-The system also contains several concepts that belong to a listing but do not currently need to exist as independent entities:
+These concepts have different responsibilities and should not be treated as interchangeable.
 
-* Property type
-* Price
-* Location
-* Bedroom count
+### User
 
-### Agent
+A User represents an account or identity within the platform.
 
-An Agent is a person or business representative responsible for publishing and managing property listings through the system.
+A user answers:
 
-For the scope of this version, an Agent has a minimal identity and is primarily associated with the listings they manage.
+> **Who is this person or account?**
 
-V1 does not require authentication, authorization, agent profiles, or agent-specific business workflows.
+A user may interact with the platform in different capacities.
+
+For example:
+
+```text
+User
+ ├── Customer
+ └── Agent
+```
+
+A user is therefore not inherently an agent or customer.
+
+Those are roles or capabilities associated with the user.
+
+---
+
+### Role
+
+A Role represents a set of capabilities or permissions associated with a user.
+
+Initial roles may include:
+
+* `customer`
+* `agent`
+* `admin`
+
+Additional roles can be introduced as the product evolves.
+
+A user may have more than one role.
+
+For example:
+
+```text
+Jane
+ ├── customer
+ └── agent
+```
+
+This allows someone to search for properties personally while also managing listings professionally.
+
+Roles should not be used to store domain-specific information.
+
+A role answers:
+
+> **What can this user do?**
+
+It does not answer:
+
+> **What information does this user have?**
+
+---
+
+### Agent Profile
+
+An Agent Profile represents information specific to a user acting as an agent.
+
+The distinction is:
+
+```text
+User
+ └── identity
+
+Agent Profile
+ └── agent-specific business information
+```
+
+A user can therefore have an Agent Profile when they operate as an agent.
+
+The first version may keep the Agent Profile minimal because the current product does not require extensive agent-management functionality.
+
+Future agent-specific information could include:
+
+* Agency
+* License information
+* Professional contact information
+* Verification status
+* Biography
+* Areas of operation
+
+This information should not be placed directly into the general User identity when it is only meaningful to agents.
+
+---
 
 ### Listing
 
-A Listing is a marketplace representation of a property made available through an agent.
+A Listing is a marketplace representation of a property made available for discovery through an agent.
 
-A listing contains the information required for a potential property seeker to discover and understand the offering, including:
+A listing contains information such as:
 
 * Title
 * Description
@@ -45,159 +125,371 @@ A listing contains the information required for a potential property seeker to d
 * Number of bedrooms
 * Geographic location
 * Address information
-* Agent responsible for the listing
+* The agent responsible for the listing
 
-A listing is the primary searchable resource in the system.
+A Listing is the primary searchable resource in the first version.
 
 ---
 
-## 3. Property vs Listing
+# 3. Identity vs Role vs Domain Profile
 
-The current system deliberately does not introduce a separate `Property` entity.
+These concepts must remain distinct.
 
-Conceptually, a distinction exists:
-
-**Property**
-
-A physical real-world asset such as an apartment, house, office, or land parcel.
-
-**Listing**
-
-A representation of that property published for discovery or transaction purposes.
-
-A single physical property could eventually have multiple listings over its lifetime or across different channels.
-
-For example:
+Consider a person named Jane.
 
 ```text
-Physical Property
-      │
-      ├── Sale Listing
-      │
-      └── Rental Listing
+User
+├── name: Jane
+├── email: jane@example.com
+└── phone: ...
 ```
 
-However, introducing this distinction into the current version would add complexity that is not required by the specification.
+Jane may have:
 
-Therefore, the current model treats the Listing as the primary domain entity.
+```text
+Roles
+├── customer
+└── agent
+```
 
-This is an intentional scope decision rather than an assertion that Property and Listing are inherently the same concept.
+And because she is an agent:
 
-A future property-management system can introduce `Property` as a separate entity when the requirements justify it.
+```text
+Agent Profile
+├── agency
+├── license information
+└── verification status
+```
+
+The concepts answer different questions:
+
+| Concept       | Question answered                                    |
+| ------------- | ---------------------------------------------------- |
+| User          | Who is this?                                         |
+| Role          | What can this user do?                               |
+| Agent Profile | What agent-specific information does this user have? |
+| Listing       | What property offering is being published?           |
+
+This separation prevents the system from assuming that being an agent makes someone a fundamentally different type of user.
 
 ---
 
-## 4. Relationships
+# 4. User and Listing Relationship
 
-### Agent → Listing
+A Listing is managed by an agent.
 
-An Agent can manage multiple Listings.
-
-Each Listing belongs to one Agent.
-
-Conceptually:
+Because an agent is a user with the agent capability, the conceptual relationship is:
 
 ```text
-Agent
-  │
-  │ manages
-  │
-  ├──────── Listing
-  ├──────── Listing
-  └──────── Listing
+User
+ │
+ │ has agent capability
+ ▼
+Agent Profile
+ │
+ │ manages
+ ▼
+Listing
 ```
 
 Cardinality:
 
 ```text
-Agent 1 ─────────── * Listing
+User 1 ─── 0..1 Agent Profile
+                    │
+                    │ 1
+                    │
+                    │
+                    │ *
+                    ▼
+                  Listing
 ```
 
-A listing cannot exist without an associated agent within the current domain model.
+A user may have no Agent Profile or one Agent Profile.
 
-The system does not currently support multiple agents jointly owning or managing a single listing.
+An Agent Profile may manage multiple Listings.
+
+A Listing has one responsible agent in the initial product.
 
 ---
 
-## 5. Listing Concepts
+# 5. Why Not Create a Customer Entity?
 
-### Property Type
+Customer is initially modeled as a role rather than a separate domain entity.
 
-A listing has one supported property transaction type:
+A person does not need a `Customer` record simply because they are allowed to search for or interact with listings.
+
+For example:
+
+```text
+User
+ └── role: customer
+```
+
+is sufficient when the platform only needs to know that the user has customer capabilities.
+
+A separate Customer domain entity becomes appropriate when customers acquire meaningful domain-specific state.
+
+For example, a future platform might need:
+
+```text
+Customer
+├── saved properties
+├── viewing preferences
+├── booking history
+├── verification state
+├── payment profile
+└── communication preferences
+```
+
+At that point, a Customer profile or entity can be introduced without changing the fundamental User identity model.
+
+---
+
+# 6. Property vs Listing
+
+The system deliberately distinguishes the conceptual idea of a physical Property from a Listing.
+
+### Property
+
+A Property is a physical real-world asset.
+
+Examples:
+
+* Apartment
+* House
+* Office
+* Land parcel
+* Vacation home
+
+### Listing
+
+A Listing is a representation of a property published for discovery or transaction.
+
+A property could eventually have multiple listings.
+
+For example:
+
+```text
+Property
+   │
+   ├── Sale Listing
+   │
+   └── Rental Listing
+```
+
+A property could also eventually appear through different channels.
+
+However, the first version does not require a separate Property entity.
+
+The distinction is documented now because it is important to the future domain model.
+
+We should not prematurely introduce the entity until the product needs to manage physical properties independently from their listings.
+
+---
+
+# 7. Current Conceptual Model
+
+The current model is therefore:
+
+```text
+                         ┌──────────────┐
+                         │     User     │
+                         └──────┬───────┘
+                                │
+                     ┌──────────┴──────────┐
+                     │                     │
+                has roles             may have
+                     │                     │
+          ┌──────────┼──────────┐          ▼
+          ▼          ▼          ▼    ┌──────────────┐
+      Customer      Agent      Admin  │ Agent Profile│
+                                      └──────┬───────┘
+                                             │
+                                          manages
+                                             │
+                                             ▼
+                                      ┌──────────────┐
+                                      │   Listing    │
+                                      └──────────────┘
+```
+
+This model keeps identity separate from business capabilities.
+
+---
+
+# 8. Listing Concepts
+
+## Property Type
+
+A Listing has one supported offering type:
 
 * `rent`
 * `sale`
 * `shortlet`
 
-The type describes how the listing is being offered.
+This is a constrained domain value.
 
-It is a constrained domain value rather than arbitrary free-form text.
+It should not be treated as arbitrary free-form text.
 
-### Price
+---
 
-A listing has a price representing the monetary amount associated with the offering.
+## Price
 
-The current version only requires a numeric price.
+A Listing has a monetary price associated with its offering.
 
-Currency handling is intentionally kept simple at this stage. If the product later supports multiple currencies or financial workflows, money can become a richer domain concept containing amount and currency.
+The initial domain only requires an amount.
 
-### Location
+Currency is conceptually part of money, even if the first version operates within a single currency.
 
-A listing has a geographic location represented conceptually by:
+If the platform later supports multiple currencies, the domain can evolve toward:
 
 ```text
-latitude
-longitude
+Money
+├── amount
+└── currency
 ```
 
-The location is required because geographic proximity is a core search capability of the system.
+The persistence representation will be determined separately.
 
-Latitude and longitude together represent a single location rather than two unrelated pieces of information.
+---
 
-### Bedrooms
+## Location
 
-A listing has a number of bedrooms.
+A Listing has a geographic location.
+
+Conceptually:
+
+```text
+Location
+├── latitude
+└── longitude
+```
+
+The location represents a single geographic point.
+
+The first version requires geographic location because proximity search is a core product capability.
+
+---
+
+## Bedrooms
+
+A Listing contains a number of bedrooms.
 
 The value represents a count and therefore cannot conceptually be negative.
 
 ---
 
-## 6. Domain Invariants
+# 9. Domain Invariants
 
-An invariant is a rule that should remain true whenever an entity exists in a valid domain state.
+An invariant is a rule that must remain true whenever the domain is in a valid state.
 
-The current domain invariants include:
+### User
 
-### Listing invariants
+1. A User represents one platform identity.
+2. A User may have multiple roles.
+3. Roles are constrained to supported capabilities.
 
-1. A listing must have a title.
-2. A listing must have a valid property type.
-3. A listing must have a valid price.
-4. A listing must have a valid bedroom count.
-5. A listing must have a valid geographic location.
-6. A listing must belong to an agent.
-7. A listing cannot reference an agent that does not exist.
+### Agent
+
+1. An Agent Profile belongs to one User.
+2. A User can have at most one Agent Profile.
+3. A user managing Listings must possess agent capability.
+4. An Agent Profile may manage multiple Listings.
+
+### Listing
+
+1. A Listing must have a title.
+2. A Listing must have a valid property type.
+3. A Listing must have a valid price.
+4. A Listing must have a valid bedroom count.
+5. A Listing must have a valid geographic location.
+6. A Listing must have a responsible agent.
+7. The responsible agent must correspond to an existing platform identity.
 8. Latitude must represent a valid geographic latitude.
 9. Longitude must represent a valid geographic longitude.
-10. A listing's price cannot be negative.
-11. A listing's bedroom count cannot be negative.
-
-These rules describe domain correctness.
-
-The implementation mechanism used to enforce them will be decided later.
+10. Price cannot be negative.
+11. Bedroom count cannot be negative.
 
 ---
 
-## 7. Search Rules
+# 10. Role Semantics
 
-Search operates primarily over Listings.
+Roles represent capabilities rather than mutually exclusive identities.
 
-The domain supports filtering by:
+The initial conceptual role set is:
+
+```text
+customer
+agent
+admin
+```
+
+A user may possess multiple roles.
+
+For example:
+
+```text
+User A
+├── customer
+└── agent
+```
+
+This avoids a model where a person must be classified permanently as either a customer or an agent.
+
+Future roles could include:
+
+```text
+property_owner
+property_manager
+staff
+support
+finance
+```
+
+The actual role set should evolve according to product requirements.
+
+---
+
+# 11. Authorization vs Domain Ownership
+
+Having a role does not automatically mean that a user owns every resource associated with that role.
+
+For example:
+
+```text
+User A
+└── role: agent
+```
+
+does not mean User A can modify every Listing.
+
+The platform may later distinguish:
+
+```text
+Role:
+Can an agent perform listing operations?
+
+Ownership:
+Which specific listings can this agent modify?
+```
+
+This distinction becomes important when multiple agents, agencies, property owners, or property managers interact with the same resources.
+
+The first version can keep authorization simple while preserving this conceptual distinction.
+
+---
+
+# 12. Search
+
+Listings are the primary searchable resource.
+
+Search supports:
 
 * Property type
 * Minimum price
 * Maximum price
-* Number of bedrooms
+* Bedrooms
 * Geographic proximity
 
 Filters may be combined.
@@ -206,53 +498,60 @@ For example:
 
 ```text
 Find rental listings
+within a specified radius
 under a specified price
-with at least or exactly a specified number of bedrooms
-within a specified distance of a geographic point.
+with a specified bedroom requirement.
 ```
 
-The exact interpretation of ambiguous filter semantics, such as whether a bedroom filter means an exact count or a minimum count, must be finalized before implementation.
+The exact semantics of ambiguous filters, such as whether bedroom count represents an exact match or minimum requirement, must be finalized before implementation.
 
 ---
 
-## 8. Geographic Search Concept
+# 13. Geographic Search
 
-Geographic search is a domain capability rather than a database feature.
+Geographic search is a domain capability.
 
-The domain concept is:
+The domain operation is:
 
-> Find listings whose location falls within a specified distance of a given geographic point.
+> Find listings whose location falls within a specified distance of a geographic point.
 
-For example:
+Conceptually:
 
 ```text
-Search point
-     ●
-     │
-     │ radius
-     ↓
-   (     )
-  (  ● ●  )
-   ( ● ● )
+                 Search point
+                      ●
+                   ╱     ╲
+                 ╱         ╲
+               ╱   radius   ╲
+             ●      ●        ●
+               ╲           ╱
+                 ╲       ╱
+                   ╲___╱
 ```
 
-The domain does not care whether this is eventually implemented using PostGIS, another database, or a dedicated search system.
+The domain does not dictate how the operation is implemented.
 
-The persistence and query implementation will be defined in later design stages.
+PostGIS is an infrastructure and persistence decision that will be documented later.
 
 ---
 
-## 9. Listing Lifecycle
+# 14. Listing Lifecycle
 
-The current version does not require a complex listing lifecycle.
+The first version does not require a complex listing lifecycle.
 
-A listing can be:
+The basic lifecycle is:
 
 ```text
-Created → Available through the API → Updated → Deleted
+Created
+   ↓
+Available through the platform
+   ↓
+Updated
+   ↓
+Deleted
 ```
 
-The version does not currently require concepts such as:
+The domain does not currently require:
 
 * Draft
 * Published
@@ -262,43 +561,47 @@ The version does not currently require concepts such as:
 * Rented
 * Expired
 
-These may become meaningful in a production marketplace, but introducing them now would add business rules that are not required by the version.
+These may become valuable once marketplace and property-management workflows become more sophisticated.
 
-The absence of a lifecycle status is therefore a deliberate scope decision.
+They should be introduced when they represent real product states rather than anticipated future complexity.
 
 ---
 
-## 10. Aggregate Boundaries
+# 15. Aggregate Boundaries
 
-For the current system, `Listing` is the primary aggregate for listing operations.
+The initial product has several conceptual boundaries.
 
-An Agent is referenced by a Listing, but the Listing does not own or contain the Agent.
+### User boundary
+
+The User represents platform identity and roles.
+
+### Agent Profile boundary
+
+The Agent Profile contains agent-specific information.
+
+### Listing boundary
+
+The Listing represents a marketplace offering.
+
+The Listing does not contain or own the User or Agent Profile.
 
 Conceptually:
 
 ```text
-Agent
-
-Listing
- ├── title
- ├── price
- ├── type
- ├── bedrooms
- ├── location
- └── agent reference
+User
+  │
+  └── Agent Profile
+          │
+          └── Listing
 ```
 
-The relationship between the two entities will be enforced through the system's persistence model.
-
-This keeps the current domain simple while preserving the possibility of richer agent capabilities later.
+The exact persistence relationships and transaction boundaries will be defined during the data-model and architecture stages.
 
 ---
 
-## 11. Domain Rules vs API Rules
+# 16. Domain Rules vs Application Rules
 
-Not every validation rule belongs to the domain.
-
-For example:
+Not every rule belongs to the domain itself.
 
 ### Domain rule
 
@@ -306,105 +609,175 @@ For example:
 A listing cannot have a negative price.
 ```
 
-This should remain true regardless of how a listing is created.
+This should remain true regardless of how the listing is created.
 
-### API rule
+### Authorization rule
 
 ```text
-POST /listings must contain a JSON request body.
+Only a user with agent capability can create an agent listing.
 ```
 
-This is an HTTP/API concern.
+This concerns access to an operation.
+
+### HTTP rule
+
+```text
+POST /listings requires a JSON request body.
+```
+
+This concerns the API transport mechanism.
 
 ### Persistence rule
 
 ```text
-agent_id must reference an existing agent.
+A listing must reference a valid agent profile.
 ```
 
-The underlying domain relationship requires this, while the database can enforce it using referential integrity.
+The relationship is a domain requirement, while the database may enforce the corresponding referential integrity.
 
-Keeping these concerns separate prevents implementation details from leaking into the domain model.
+Keeping these concerns separate prevents infrastructure and transport concepts from leaking into the domain.
 
 ---
 
-## 12. Current Domain Model
+# 17. Future Property-Management Domain
 
-The resulting conceptual model is:
+The identity model provides a foundation for a broader platform.
+
+A future domain could look like:
 
 ```text
-                    ┌───────────────┐
-                    │     Agent     │
-                    └───────┬───────┘
-                            │
-                         manages
-                            │
-                            │ 1
-                            │
-                            │
-                            │ *
-                    ┌───────▼───────┐
-                    │    Listing    │
-                    ├───────────────┤
-                    │ title         │
-                    │ description   │
-                    │ price         │
-                    │ type          │
-                    │ bedrooms      │
-                    │ location      │
-                    │ address       │
-                    │ agent         │
-                    └───────────────┘
+                              User
+                                │
+             ┌──────────────────┼───────────────────┐
+             │                  │                   │
+          Customer            Agent          Property Owner
+             │                  │                   │
+             │                  │                   │
+             │                  └── Listings         │
+             │                                      │
+             └───────────────┐                      │
+                             ▼                      ▼
+                          Booking              Property
+                             │                      │
+                           Guest                    │
+                                                    ▼
+                                                   Unit
 ```
 
----
-
-## 13. Future Evolution
-
-The current model intentionally leaves room for a broader property-management platform.
-
-A future model may introduce concepts such as:
+Additional domains could later include:
 
 ```text
-Property
- ├── Unit
- ├── Owner
- ├── Listing
- ├── Reservation
- ├── Guest
- ├── Maintenance Request
- ├── Meter Reading
- └── Payment
+Booking
+Availability
+Payments
+Payouts
+Maintenance
+Utilities
+Messaging
+Notifications
+Search
+Analytics
 ```
 
-The important architectural principle is:
+The first version does not implement these domains.
 
-> Design the current system so that these concepts can be introduced later without unnecessarily implementing them today.
-
-The current version therefore optimizes for a small, coherent domain rather than attempting to model the entire future platform.
+The purpose of documenting them is to prevent today's identity and domain model from unnecessarily blocking tomorrow's product.
 
 ---
 
-## 14. Open Domain Questions
+# 18. Important Design Principle
 
-The following questions should be resolved before the corresponding implementation decisions are finalized:
+The platform distinguishes three fundamentally different questions:
 
-1. Does `bedrooms` represent an exact match or a minimum number?
-2. Should price have an explicit currency?
-3. Should listings eventually have a lifecycle/status?
-4. Should a deleted listing be permanently removed or retained?
-5. When should `Property` become a separate entity?
-6. Does the system eventually need multiple agents per listing?
-7. What additional property information becomes necessary when the platform expands into property management?
+```text
+WHO?
+  ↓
+User
 
-These questions are deliberately separated from implementation decisions. They should only be resolved when the relevant product requirement requires them.
+WHAT CAN THEY DO?
+  ↓
+Role
+
+WHAT BUSINESS INFORMATION DO THEY HAVE?
+  ↓
+Domain Profile / Entity
+```
+
+For example:
+
+```text
+User
+  │
+  ├── roles: customer, agent
+  │
+  └── Agent Profile
+          │
+          └── manages Listings
+```
+
+This is more flexible than representing every user category as a separate identity table.
 
 ---
 
-## 15. Design Principle
+# 19. Open Domain Questions
 
-The domain model follows a simple principle:
+The following questions remain intentionally open until the relevant design stage:
 
-> **Model what the current requirements require, while avoiding decisions that make future evolution unnecessarily difficult.**
+1. Which roles are required in the first version?
+2. Does the first version require authentication, or is User currently a domain foundation only?
+3. What information belongs in the Agent Profile?
+4. Should an Agent Profile be required before a user can create Listings?
+5. What exactly does the bedroom filter mean?
+6. Should price have an explicit currency?
+7. What constitutes ownership of a Listing?
+8. Should multiple agents eventually manage one Listing?
+9. When should Property become a separate persisted entity?
+10. When do customers require a dedicated domain profile?
+11. How should role-based authorization interact with resource ownership?
 
-The system should be easy to extend, but the version should remain small enough to understand, test, and deliver within its time constraints.
+These questions should be resolved according to actual product behavior rather than prematurely encoded into infrastructure.
+
+---
+
+# 20. Final V1 Domain Model
+
+The V1 domain can therefore be summarized as:
+
+```text
+                         ┌─────────────┐
+                         │    User     │
+                         └──────┬──────┘
+                                │
+                         has one or more
+                                │
+                                ▼
+                         ┌─────────────┐
+                         │    Roles    │
+                         └──────┬──────┘
+                                │
+                         agent capability
+                                │
+                                ▼
+                      ┌──────────────────┐
+                      │  Agent Profile   │
+                      └────────┬─────────┘
+                               │
+                            manages
+                               │
+                               ▼
+                      ┌──────────────────┐
+                      │     Listing      │
+                      ├──────────────────┤
+                      │ title            │
+                      │ description      │
+                      │ price            │
+                      │ type             │
+                      │ bedrooms         │
+                      │ location         │
+                      │ agent            │
+                      └──────────────────┘
+```
+
+The model intentionally keeps **identity, capability, and business entities separate**.
+
+That gives the platform a stable foundation for future property-management capabilities without requiring those capabilities to exist in the first version.
